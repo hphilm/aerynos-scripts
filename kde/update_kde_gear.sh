@@ -65,6 +65,7 @@ while read pkg; do
     fi
   else
     notify-send "Failed Package Update" "$pkg failed to update!"
+    version=$(cat stone.yaml | grep version | awk '{ print $3 }' | sed 's/\"//g')
     echo "$pkg: $version" >> $failure_log
     exit
   fi
