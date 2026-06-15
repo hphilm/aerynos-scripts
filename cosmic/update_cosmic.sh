@@ -1,170 +1,72 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 
-UPDATE_REPO=${HOME}/Documents/contribs/cosmic_weekly/aerynos-recipes
-LOG_DIR=${HOME}/Documents/contribs/cosmic_weekly/logs
-COSMIC_SRC=/tmp/cosmic_src
+# Get maintainers repo
+read -p "Enter your AerynOS recipe fork's URL: " fork
 
-if [ ! -d "$LOG_DIR" ]; then
-  mkdir -p $LOG_DIR
-fi
-
-# Give temporary user access to /tmp
-sudo chown $USER:root /tmp
-
-mkdir -p $COSMIC_SRC
-
-base_dir="${UPDATE_REPO}/c"
-x_base_dir="${UPDATE_REPO}/x/xdg-desktop-portal-cosmic"
-wksp_epoch="${COSMIC_SRC}/cosmic-workspaces-epoch"
-xdg_src="${COSMIC_SRC}/xdg-desktop-portal-cosmic"
+UPDATE_BASE=${HOME}/Documents/contribs/cosmic
+UPDATE_REPO="${UPDATE_BASE}/$(echo $fork | awk -F'/' '{ print $NF }')"
+LOG_DIR=${HOME}/Documents/contribs/cosmic/logs
+DATE=$(date +%Y-%m-%d)
 cwd=$(pwd)
+LIST=$cwd/cosmic.lst
 
-
-cd $base_dir
-
-# Create LOG_DIR for this build
-if [ ! -d "${LOG_DIR}/$(date -I date)" ]; then
-  mkdir -p ${LOG_DIR}/$(date -I date)
+# Create the update repo if it doesn't exist
+if [ ! -d "$UPDATE_REPO" ]; then
+  mkdir -pv $UPDATE_BASE
+  cd $UPDATE_BASE
+  git clone $fork
 fi
 
-# Reset the LOG_DIR variable to the created date directory
-LOG_DIR=${LOG_DIR}/$(date -I date)
+# Create the log directory if it doesn't exist
+if [ ! -d "$LOG_DIR" ]; then
+  mkdir -pv $LOG_DIR/$DATE
+fi
 
-# Create a failure list
-failure_lst="$(date -I date)-package-failures.lst"
-touch ${LOG_DIR}/$failure_lst
+# If the base LOG_DIR exists, check to see if the log directory for today exists
+if [ ! -d "${LOG_DIR}/$DATE" ]; then
+  mkdir -pv $LOG_DIR/$DATE
+fi
 
-# Create a success list
-success_lst="$(date -I date)-package-successes.lst"
-touch ${LOG_DIR}/$success_lst
+LOG_DIR=$LOG_DIR/$DATE
 
-# Ensure the branch is unique to the week it's being updated
-# Comment this after the first run of the week, uncomment it after merge.
-git checkout 2025-05-repo-rebuild
-git pull -r https://github.com/aerynos/recipes.git 2025-05-repo-rebuild
-git push -f
-git checkout -b $(date -I date)-cosmic-update
+# Create the log files
+failure_log="${LOG_DIR}/$DATE-package-failures.log"
+success_log="${LOG_DIR}/$DATE-package-successes.log"
 
-for pkg in *; do
-    if [[ "$pkg" == "cosmic-"* ]]; then
-      if [[ "$pkg" == "cosmic-workspace" ]]; then
-        pkg="${pkg}-epoch"
-      else      
-        if [[ "$pkg" == "cosmic-desktop" ]]; then
-          cd $base_dir
-          continue
-        fi
+touch $failure_log $success_log
 
-        
+cd $UPDATE_REPO
 
-        cd "${COSMIC_SRC}"
+# Create a unique branch in the update repo
+git checkout main
+git pull -r https://github.com/aerynos/recipes.git main
+git push
+git checkout -b $DATE-cosmic-update
 
-        git clone https://github.com/pop-os/${pkg}.git
-        cd $pkg
-
-        if [[ "$pkg" == "cosmic-workspace-epoch" ]]; then
-          pkg=$(echo $pkg | sed 's/-epoch//g')
-        fi
-      fi
-
-      echo "Current dir: $(pwd)"
-
-      # Get the most up-to-date commit hash from the repo   
-      update_hash=$(git rev-parse HEAD)
-
-      # Switch to the update repo
-      cd "${base_dir}/${pkg}"
-
-      echo "In package dir: $pkg"
-
-      # Get the currently deployed commit hash
-      cur_hash=$(cat stone.yaml | grep .git | grep -v homepage | grep -v version | awk '{ print $4 }')
-
-      if [[ "${update_hash}" != "${cur_hash}" ]]; then
-        echo "Updating: $pkg"
-        version=$(cat stone.yaml | grep version | awk '{ print $3 }')
-        echo "Current version: ${version}"
-        boulder recipe update --ver 1.0.0-beta.3+git."${update_hash:0:7}" --upstream "git|${update_hash}" stone.yaml -w
-        version=$(cat stone.yaml | grep version | awk '{ print $3 }')
-        echo "Updated version: ${version}"
-        if [[ "$?" == "0" ]]; then
-          boulder build --profile local-x86_64
-
-          if [[ "$?" == "0" ]]; then
-            just mv-local
-            notify-send "Successful Build" "$pkg successfully built please review"
-          else
-            notify-send "Failed Build" "$pkg failed to build; please review"
-            cd $base_dir
-            # Send the failure to the failure list
-            echo "$pkg failed to build" >> ../$failure_lst
-            continue
-          fi
-        else
-          # Send the notification that the package failed to update
-          notify-send "Failed Update" "$pkg failed to update!"
-          # Checkout the directory to remove anything that did get updated
-          git checkout .
-          cd $base_dir
-          # Send the failure to the failure list
-          echo "$pkg failed to update" >> ../$failure_lst
-          continue
-        fi
-        # Send to the success list
-        cd $base_dir
-        echo $pkg >> ../$success_lst
-      fi          
-    else
-      cd $base_dir
-      continue
-    fi
-done
-
-# Clone the xdg-desktop-portal-cosmic repo
-cd $COSMIC_SRC
-git clone https://github.com/pop-os/xdg-desktop-portal-cosmic.git
-
-# Switch to the repo and cache the latest hash
-cd $xdg_src
-update_hash=$(git rev-parse HEAD)
-
-# Switch to the update repo directory and get the current hash
-cd $x_base_dir
-cur_hash=$(cat stone.yaml | grep .git | grep -v homepage | grep -v version | awk '{print $4 }')
-
-if [[ "${update_hash}" != "${cur_hash}" ]]; then
-  echo "Updating: xdg-desktop-portal-cosmic"
-  version=$(cat stone.yaml | grep version | awk '{ print $3 }')
-  echo "Current version: ${version}"
-  boulder recipe update --ver 1.0.0-beta.3+git."${update_hash:0:7}" --upstream "git|${update_hash}" stone.yaml -w
-  version=$(cat stone.yaml | grep version | awk '{ print $3 }')
-  echo "Updated version: ${version}"
-
+while read pkg; do
+  cd $UPDATE_REPO/${pkg:0:1}/$pkg
+  echo "Calling 'boulder up'"
+  echo "Current folder: $(pwd)"
+  boulder up stone.yaml -y
+  echo "Calling 'boulder up' done"
+  
   if [[ "$?" == "0" ]]; then
-    boulder build --profile local-x86_64
-
+    version=$(cat stone.yaml | grep version | awk '{ print $3 }' | sed 's/\"//g')
+    echo "Building: $pkg $version"
+    boulder build --profile local-x86_64 -u
     if [[ "$?" == "0" ]]; then
       just mv-local
-      notify-send "Successful Build" "xdg-desktop-portal-cosmic successfully built; please review"
-      # Send to the success list
-      cd $base_dir
-      echo $pkg >> ../$success_lst
+      notify-send "Successful Build" "$pkg successfully built; please review"
+      echo "$pkg: $version" >> $success_log
     else
-      notify-send "Failed Build" "xdg-desktop-portal-cosmic failed to build; please review"
-      # Add to the failure list
-      cd $base_dir
-      echo "$pkg failed to build" >> ../$failure_lst
+      notify-send "Failed Build" "$pkg failed to build; please review"
+      echo "$pkg: $version" >> $failure_log
+      exit
     fi
   else
-    notify-send "Failed Update" "xdg-desktop-portal-cosmic failed to update!"
-    git checkout .
-    # Add to the failure list
-    echo "$pkg failed to update" >> ../$failure_lst
+    notify-send "Failed Package Update" "$pkg failed to update!"
+    version=$(cat stone.yaml | grep version | awk '{ print $3 }' | sed 's/\"//g')
+    echo "$pkg: $version" >> $failure_log
+    exit
   fi
-fi
-
-# Return /tmp ownership to root
-sudo chown root:root /tmp
-
-# Return to the directory that the script was ran from
-cd $cwd
+done < $LIST

@@ -1,16 +1,11 @@
 # COSMIC Weekly Update Build Script - AerynOS
 These are a collection of scripts that I use to build System76's COSMIC DE for AerynOS.
 
-## Build from master branch
-The `update_cosmic.sh` script builds the COSMIC DE packages from the master branch of each of the
-upstream repositories.
-
 ## Build from a release tag
-The `update_cosmic_tag.sh` script builds the COSMIC DE packages from a release tag. This build
+The `update_cosmic.sh` script builds the COSMIC DE packages from current release tag. This build
 script needs the builder to have their own fork of the [AerynOS recipes](https://github.com/AerynOS/recipes)
 repository. The script will ask the builder to put the the URL of their fork into it so it can be
-cloned and a new branch made within the fork. Please read the script and ensure that the tag you want
-is the one within the script. If it is not, you will have to manually update the release tag.
+cloned and a new branch made within the fork.
 
 ## Auto-create Commits
 The `make_commits.sh` script runs through each built package within the forked repository using
