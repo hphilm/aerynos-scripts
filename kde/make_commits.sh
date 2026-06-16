@@ -3,7 +3,7 @@
 ### IMPORTANT!
 # Make sure that you are in the root of your packaging repo before you run this script!
 repo_root=$(pwd)
-LIST=$repo_root/kde-gear.lst
+LIST=$repo_root/pkg.lst
 
 while read pkg; do
   # Change to the top directory in the git status list
