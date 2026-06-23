@@ -9,7 +9,7 @@ LOG_DIR=${HOME}/Documents/contribs/plasma/logs
 DATE=$(date +%Y-%m-%d)
 cwd=$(pwd)
 LIST=$cwd/plasma.lst
-LIST=$cwd/plasma_build.lst
+#LIST=$cwd/plasma_build.lst
 
 # Create the update repo if it doesn't exist
 if [ ! -d "$UPDATE_REPO" ]; then
@@ -39,10 +39,11 @@ touch $failure_log $success_log
 cd $UPDATE_REPO
 
 # Create a unique branch in the update repo
-#git checkout main
-#git pull -r https://github.com/aerynos/recipes.git main
-#git push
-#git checkout -b $DATE-plasma-update
+git checkout main
+git pull -r https://github.com/aerynos/recipes.git main
+git push
+git branch $DATE-plasma-update
+git checkout $DATE-plasma-update
 
 while read pkg; do
   cd $UPDATE_REPO/${pkg:0:1}/$pkg
