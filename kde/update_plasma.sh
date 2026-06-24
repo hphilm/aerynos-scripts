@@ -9,7 +9,7 @@ LOG_DIR=${HOME}/Documents/contribs/plasma/logs
 DATE=$(date +%Y-%m-%d)
 cwd=$(pwd)
 LIST=$cwd/plasma.lst
-LIST=$cwd/plasma_build.lst
+#LIST=$cwd/plasma_build.lst
 
 # Create the update repo if it doesn't exist
 if [ ! -d "$UPDATE_REPO" ]; then
@@ -73,4 +73,4 @@ while read pkg; do
   fi
 done < $LIST
 
-shutdown -h now
+#shutdown -h now
