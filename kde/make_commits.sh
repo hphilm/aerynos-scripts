@@ -12,7 +12,7 @@ while read pkg; do
   cd $pkg_dir
   git add .
   pkg_name=$pkg
-  vers=$(cat stone.yaml | grep version | awk '{ print $3 }' | sed 's/\"//g')
+  vers=$(cat stone.yaml | grep version | awk '{ print $3;exit; }' | sed 's/\"//g')
   git commit -m "${pkg_name}: Update to v${vers}"
   cd $repo_root
 done < $LIST

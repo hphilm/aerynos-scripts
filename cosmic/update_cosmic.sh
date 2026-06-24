@@ -41,7 +41,8 @@ cd $UPDATE_REPO
 git checkout main
 git pull -r https://github.com/aerynos/recipes.git main
 git push
-git checkout -b $DATE-cosmic-update
+git branch $DATE-cosmic-update
+git checkout $DATE-cosmic-update
 
 while read pkg; do
   cd $UPDATE_REPO/${pkg:0:1}/$pkg
@@ -51,7 +52,7 @@ while read pkg; do
   echo "Calling 'boulder up' done"
   
   if [[ "$?" == "0" ]]; then
-    version=$(cat stone.yaml | grep version | awk '{ print $3 }' | sed 's/\"//g')
+    version=$(cat stone.yaml | grep version | awk '{ print $3;exit; }' | sed 's/\"//g')
     echo "Building: $pkg $version"
     boulder build --profile local-x86_64 -u
     if [[ "$?" == "0" ]]; then
@@ -65,7 +66,7 @@ while read pkg; do
     fi
   else
     notify-send "Failed Package Update" "$pkg failed to update!"
-    version=$(cat stone.yaml | grep version | awk '{ print $3 }' | sed 's/\"//g')
+    version=$(cat stone.yaml | grep version | awk '{ print $3;exit; }' | sed 's/\"//g')
     echo "$pkg: $version" >> $failure_log
     exit
   fi
