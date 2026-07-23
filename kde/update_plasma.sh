@@ -41,8 +41,7 @@ cd $UPDATE_REPO
 git checkout main
 git pull -r https://github.com/aerynos/recipes.git main
 git push
-git branch $DATE-plasma-update
-git checkout $DATE-plasma-update
+git checkout -b $DATE-plasma-update
 
 while read pkg; do
   cd $UPDATE_REPO/${pkg:0:1}/$pkg
