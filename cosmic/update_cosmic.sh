@@ -44,7 +44,12 @@ git push
 git branch $DATE-cosmic-update
 git checkout $DATE-cosmic-update
 
-# Uncomment this one if you want to interact with the cloned recipes.git before building any packages.
+# Copy 'make_commits' to update repo
+\cp -f $cwd/make_commits.sh $UPDATE_REPO
+
+# Uncomment the following 3 lines, if you want to interact with the cloned recipes.git before building any packages.
+echo "Your recipes are located at: $UPDATE_REPO"
+echo "Go ahead and modify them as needed ..."
 read -n 1 -p Continue?
 
 while read pkg; do
