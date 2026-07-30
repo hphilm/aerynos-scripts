@@ -43,6 +43,16 @@ git pull -r https://github.com/aerynos/recipes.git main
 git push
 git checkout -b $DATE-plasma-update
 
+# Copy 'make_commits' to update repo
+\cp -f $cwd/make_commits.sh $UPDATE_REPO
+# Copy 'pkg.lst' to update repo
+\cp -f $LIST $UPDATE_REPO/pkg.lst
+
+# Uncomment the following 3 lines, if you want to interact with the cloned recipes.git before building any packages.
+#echo "Your recipes are located at: $UPDATE_REPO"
+#echo "Go ahead and modify them as needed ..."
+#read -n 1 -p Continue?
+
 while read pkg; do
   cd $UPDATE_REPO/${pkg:0:1}/$pkg
   echo "Calling 'boulder up'"
