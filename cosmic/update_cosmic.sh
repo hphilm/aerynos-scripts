@@ -44,6 +44,9 @@ git push
 git branch $DATE-cosmic-update
 git checkout $DATE-cosmic-update
 
+# Uncomment this one if you want to interact with the cloned recipes.git before building any packages.
+read -n 1 -p Continue?
+
 while read pkg; do
   cd $UPDATE_REPO/${pkg:0:1}/$pkg
   echo "Calling 'boulder up'"
